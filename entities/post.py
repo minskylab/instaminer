@@ -15,7 +15,7 @@ class InstaminerPost(BaseModel):
     likes: int
     comments: int
     relevance: float
-    description: str
+    description: Optional[str]
     comments_content: Optional[List[str]]
 
 

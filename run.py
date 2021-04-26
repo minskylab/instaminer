@@ -14,6 +14,6 @@ ctx = new_context(opts)
 
 run(looper(ctx, SearchConfigurations(
     query="cusco",
-    delay_seconds=60,
-    period_seconds=60,
+    delay_seconds=60*5,  # each 5min
+    period_seconds=60*5,
 )))
