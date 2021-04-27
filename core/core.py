@@ -1,3 +1,5 @@
+from emitter.amqp import AMQPOptions, open_amqp_connection
+from pika import BlockingConnection
 from dataclasses import dataclass
 from typing import Optional
 from minio import Minio
@@ -9,6 +11,7 @@ from pathlib import Path
 class InstaminerContext:
     minio_client: Minio
     loader: Instaloader
+    amqp_client: BlockingConnection
 
     data_dir: str
 
@@ -70,6 +73,7 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
 class NewContextOptions:
     minio_options: MinioOptions
     loader_options: InstaloaderOptions
+    amqp_options: AMQPOptions
 
     data_dir: str = "data/"
 
@@ -80,6 +84,7 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
 
     return InstaminerContext(
         minio_client=open_minio(opts.minio_options),
+        amqp_client=open_amqp_connection(opts.amqp_options),
         loader=open_instaloader(opts.loader_options),
         data_dir=opts.data_dir,
 
