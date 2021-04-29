@@ -1,5 +1,5 @@
-from peewee import Model, PrimaryKeyField, DateField, CharField, IntegerField, FloatField
-from typing import List, Optional
+from peewee import DateTimeField, Model, CharField, IntegerField, FloatField, TextField
+from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime
 from peewee import PostgresqlDatabase
@@ -8,28 +8,28 @@ from peewee import PostgresqlDatabase
 class InstaminerPost(BaseModel):
     id: str
     date: datetime
-    hashtags: List[str]
-    mentions: List[str]
+    hashtags: str
+    mentions: str
     image_uri: str
     likes: int
     comments: int
     relevance: float
     description: Optional[str]
-    comments_content: Optional[List[str]]
+    comments_content: Optional[str]
 
 
 def define_post_model(db: PostgresqlDatabase) -> Model:
     class PostModel(Model):
         id = CharField(primary_key=True)
-        date = DateField()
-        hashtags = CharField(max_length=10000)
-        mentions = CharField(max_length=10000)
-        image_uri = CharField(max_length=10000)
+        date = DateTimeField()
+        hashtags = TextField()
+        mentions = TextField()
+        image_uri = TextField()
         likes = IntegerField()
         comments = IntegerField()
         relevance = FloatField()
-        description = CharField(max_length=10000)
-        comments_content = CharField(max_length=10000)
+        description = TextField()
+        comments_content = TextField()
 
         class Meta:
             database = db

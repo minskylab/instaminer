@@ -62,7 +62,7 @@ class InstaloaderOptions:
 
 
 def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
-    loader = Instaloader()
+    loader = Instaloader(quiet=True)
     user, password = opts.instagram_username, opts.instagram_password
 
     try:
