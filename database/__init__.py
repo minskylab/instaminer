@@ -1,1 +1,1 @@
-from .database_instance import db
+from .database_instance import open_postgres_from_env

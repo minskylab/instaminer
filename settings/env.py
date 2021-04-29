@@ -29,3 +29,9 @@ def instaloader_from_env() -> InstaloaderOptions:
         instagram_username=getenv("IG_USERNAME", ""),
         instagram_password=getenv("IG_PASSWORD", ""),
     )
+
+
+def postgres_from_env() -> str:
+    load_dotenv()
+
+    return getenv("DB_URL", "")

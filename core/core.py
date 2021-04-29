@@ -5,15 +5,18 @@ from typing import Optional
 from minio import Minio
 from instaloader.instaloader import Instaloader
 from pathlib import Path
+from peewee import PostgresqlDatabase
+from database import open_postgres_from_env
 
 
 @dataclass
 class InstaminerContext:
-    minio_client: Minio
     loader: Instaloader
-    amqp_client: BlockingConnection
-
     data_dir: str
+
+    minio_client: Optional[Minio] = None
+    amqp_client: Optional[BlockingConnection] = None
+    db: Optional[PostgresqlDatabase] = None
 
     s3_endpoint: Optional[str] = None
     s3_bucket: Optional[str] = None
@@ -71,23 +74,35 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
 
 @dataclass
 class NewContextOptions:
-    minio_options: MinioOptions
     loader_options: InstaloaderOptions
-    amqp_options: AMQPOptions
-
     data_dir: str = "data/"
+
+    minio_options: Optional[MinioOptions] = None
+    amqp_options: Optional[AMQPOptions] = None
+    db_url: Optional[str] = None
+
+
+# postgres_from_env
 
 
 def new_context(opts: NewContextOptions) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
-    return InstaminerContext(
-        minio_client=open_minio(opts.minio_options),
-        amqp_client=open_amqp_connection(opts.amqp_options),
+    ctx = InstaminerContext(
         loader=open_instaloader(opts.loader_options),
-        data_dir=opts.data_dir,
-
-        s3_endpoint=opts.minio_options.endpoint,
-        s3_bucket=opts.minio_options.bucket,
+        data_dir=opts.data_dir
     )
+
+    if not opts.minio_options is None:
+        ctx.minio_client = open_minio(opts.minio_options)
+        ctx.s3_endpoint = opts.minio_options.endpoint
+        ctx.s3_bucket = opts.minio_options.bucket
+
+    if not opts.amqp_options is None:
+        ctx.amqp_client = open_amqp_connection(opts.amqp_options)
+
+    if not opts.db_url is None:
+        ctx.db = open_postgres_from_env(opts.db_url),
+
+    return ctx

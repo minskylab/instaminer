@@ -1,10 +1,5 @@
 from peewee import PostgresqlDatabase
-from os import getenv
-from dotenv import load_dotenv
 
 
-load_dotenv()
-
-db_url = getenv("DB_URL")
-
-db = PostgresqlDatabase(db_url)
+def open_postgres_from_env(db_url: str) -> PostgresqlDatabase:
+    return PostgresqlDatabase(db_url)

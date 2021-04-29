@@ -1,9 +1,10 @@
 
 from typing import Optional
-from .post import PostModel, InstaminerPost
+from .post import InstaminerPost
+from peewee import Model
 
 
-def save_instaminer_post(p: InstaminerPost) -> Optional[InstaminerPost]:
+def save_instaminer_post(p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:
     post = PostModel(
         id=p.id,
         date=p.date,
