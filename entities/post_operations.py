@@ -18,6 +18,8 @@ def save_instaminer_post(p: InstaminerPost, PostModel: Model) -> Optional[Instam
         comments_content=p.comments_content,
     )
 
+    print(post)
+
     try:
         post.save()
     except BaseException as e:

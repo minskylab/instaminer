@@ -1,1 +1,1 @@
-from .post import PostModel, InstaminerPost
+from .post import InstaminerPost

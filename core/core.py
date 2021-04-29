@@ -5,7 +5,7 @@ from typing import Optional
 from minio import Minio
 from instaloader.instaloader import Instaloader
 from pathlib import Path
-from peewee import PostgresqlDatabase
+from peewee import Model, PostgresqlDatabase
 from database import open_postgres_from_env
 
 
@@ -20,6 +20,8 @@ class InstaminerContext:
 
     s3_endpoint: Optional[str] = None
     s3_bucket: Optional[str] = None
+
+    PostModel: Optional[Model] = None
 
 
 @dataclass
@@ -103,6 +105,9 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
         ctx.amqp_client = open_amqp_connection(opts.amqp_options)
 
     if not opts.db_url is None:
-        ctx.db = open_postgres_from_env(opts.db_url),
+        res = open_postgres_from_env(opts.db_url)
+
+        ctx.db = res[0]
+        ctx.PostModel = res[1]
 
     return ctx

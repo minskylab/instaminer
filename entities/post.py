@@ -1,4 +1,3 @@
-from peewee import PrimaryKeyField
 from peewee import Model, PrimaryKeyField, DateField, CharField, IntegerField, FloatField
 from typing import List, Optional
 from pydantic import BaseModel
@@ -21,16 +20,16 @@ class InstaminerPost(BaseModel):
 
 def define_post_model(db: PostgresqlDatabase) -> Model:
     class PostModel(Model):
-        id = PrimaryKeyField()
+        id = CharField(primary_key=True)
         date = DateField()
-        hashtags = CharField()
-        mentions = CharField()
-        image_uri = CharField()
+        hashtags = CharField(max_length=10000)
+        mentions = CharField(max_length=10000)
+        image_uri = CharField(max_length=10000)
         likes = IntegerField()
         comments = IntegerField()
         relevance = FloatField()
-        description = CharField()
-        comments_content = CharField()
+        description = CharField(max_length=10000)
+        comments_content = CharField(max_length=10000)
 
         class Meta:
             database = db
