@@ -1,18 +1,32 @@
 from emitter.amqp import AMQPOptions, open_amqp_connection
 from pika import BlockingConnection
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, Optional
 from minio import Minio
 from instaloader.instaloader import Instaloader
 from pathlib import Path
 from peewee import Model, PostgresqlDatabase
 from database import open_postgres_from_env
+from enum import Enum
+from collections import defaultdict
+
+
+class InstaminerState(Enum):
+    IDLE = 0
+    RUNNING = 1
+    DRAINING = 2
+    CLOSING = 3
 
 
 @dataclass
 class InstaminerContext:
     loader: Instaloader
     data_dir: str
+    last_images: Dict[str, str]
+
+    state: InstaminerState = InstaminerState.IDLE
+
+    max_saved_memory_images: int = 10
 
     minio_client: Optional[Minio] = None
     amqp_client: Optional[BlockingConnection] = None
@@ -78,13 +92,10 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
 class NewContextOptions:
     loader_options: InstaloaderOptions
     data_dir: str = "data/"
-
+    max_saved_memory_images: int = 10
     minio_options: Optional[MinioOptions] = None
     amqp_options: Optional[AMQPOptions] = None
     db_url: Optional[str] = None
-
-
-# postgres_from_env
 
 
 def new_context(opts: NewContextOptions) -> InstaminerContext:
@@ -93,7 +104,9 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
 
     ctx = InstaminerContext(
         loader=open_instaloader(opts.loader_options),
-        data_dir=opts.data_dir
+        max_saved_memory_images=opts.max_saved_memory_images,
+        last_images=defaultdict(lambda: ""),
+        data_dir=opts.data_dir,
     )
 
     if not opts.minio_options is None:

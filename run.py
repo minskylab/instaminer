@@ -11,6 +11,7 @@ opts = NewContextOptions(
     loader_options=instaloader_from_env(),
     minio_options=minio_options_from_env(),
     db_url=postgres_from_env(),
+    max_saved_memory_images=3,
     # amqp_options=open_amqp_connection()
 )
 

@@ -1,4 +1,3 @@
-from typing import Union
 from dotenv import load_dotenv
 from core.core import InstaloaderOptions, MinioOptions
 from os import getenv

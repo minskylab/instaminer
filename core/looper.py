@@ -1,3 +1,4 @@
+from core.garbage_collector import update_garbage_collector
 from entities.post_operations import exists_instaminer_post, save_instaminer_post
 from core.procedure import SearchConfigurations, search_by_hashtag
 from .core import InstaminerContext

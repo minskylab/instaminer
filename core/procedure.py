@@ -1,3 +1,4 @@
+from core.garbage_collector import update_garbage_collector
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import dropwhile, takewhile
@@ -98,6 +99,8 @@ def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -
             link = f"https://{bucket}.{endpoint}/{destination}"
         except BaseException as e:
             logger.warning(e)
+
+        update_garbage_collector(ctx, post.shortcode, filepath)
 
     full_comments: List[str] = []
 
