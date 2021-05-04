@@ -1,4 +1,5 @@
-from emitter.amqp import AMQPOptions, open_amqp_connection
+
+from pika.adapters.blocking_connection import BlockingChannel
 from pika import BlockingConnection
 from dataclasses import dataclass
 from typing import Dict, Optional
@@ -9,6 +10,9 @@ from peewee import Model, PostgresqlDatabase
 from database import open_postgres_from_env
 from enum import Enum
 from collections import defaultdict
+from pika import BlockingConnection, ConnectionParameters
+from pika.adapters.blocking_connection import BlockingChannel
+from dataclasses import dataclass
 
 
 class InstaminerState(Enum):
@@ -27,9 +31,12 @@ class InstaminerContext:
     state: InstaminerState = InstaminerState.IDLE
 
     max_saved_memory_images: int = 10
+    new_post_name: str = "new_post"
+    new_post_update_name: str = "updated_post"
 
     minio_client: Optional[Minio] = None
     amqp_client: Optional[BlockingConnection] = None
+    amqp_channel: Optional[BlockingChannel] = None
     db: Optional[PostgresqlDatabase] = None
 
     s3_endpoint: Optional[str] = None
@@ -89,9 +96,35 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
 
 
 @dataclass
+class AMQPOptions:
+    host: str = "localhost"
+
+
+def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
+    # Tuple[BlockingConnection, BlockingChannel]
+    params = ConnectionParameters(host=opts.host)
+
+    connection = BlockingConnection(params)
+    # channel = connection.channel()
+
+    return connection
+
+
+def open_channel(ctx: InstaminerContext, queue_name: str) -> Optional[BlockingChannel]:
+    if ctx.amqp_client is None:
+        return None
+
+    channel = ctx.amqp_client.channel()
+    channel.queue_declare(queue_name)
+
+    return channel
+
+
+@dataclass
 class NewContextOptions:
     loader_options: InstaloaderOptions
     data_dir: str = "data/"
+    queue_name: str = "instaminer"
     max_saved_memory_images: int = 10
     minio_options: Optional[MinioOptions] = None
     amqp_options: Optional[AMQPOptions] = None
@@ -116,6 +149,7 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
 
     if not opts.amqp_options is None:
         ctx.amqp_client = open_amqp_connection(opts.amqp_options)
+        ctx.amqp_channel = open_channel(ctx, opts.queue_name)
 
     if not opts.db_url is None:
         res = open_postgres_from_env(opts.db_url)

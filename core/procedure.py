@@ -1,4 +1,4 @@
-from core.garbage_collector import update_garbage_collector
+from .garbage_collector import update_garbage_collector
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import dropwhile, takewhile
@@ -57,9 +57,6 @@ def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -
 
     rel = opts.relevance(likes, comments)  # type: ignore
 
-    msg = f"post found [id={_id}] | L: {likes}, C: {comments}, D: {date}, R: {rel}"
-    logger.info(msg)
-
     filepath = join(ctx.data_dir, post.shortcode)
 
     post_x: Optional[Model] = True
@@ -100,7 +97,7 @@ def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -
         except BaseException as e:
             logger.warning(e)
 
-        update_garbage_collector(ctx, post.shortcode, filepath)
+        update_garbage_collector(ctx, post.shortcode, full_filepath)
 
     full_comments: List[str] = []
 

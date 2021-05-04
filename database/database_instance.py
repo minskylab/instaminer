@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 def open_postgres_from_env(db_url: str) -> Tuple[PostgresqlDatabase, Model]:
     url = urlparse(db_url)
 
-    if not url.scheme == "postgres":
+    if url.scheme != "postgres":
         raise BaseException("invalid db_url schema")
 
     chunks = url.netloc.split("@")
