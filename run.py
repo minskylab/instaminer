@@ -18,6 +18,6 @@ ctx = new_context(opts)
 
 run(looper(ctx, SearchConfigurations(
     query="peru",
-    delay_seconds=60*5,  # each 5min
-    period_seconds=60*5,
+    delay_seconds=5*60,  # each 5min
+    period_seconds=5*60,
 )))

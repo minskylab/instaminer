@@ -1,7 +1,9 @@
-from .context import InstaminerContext, InstaminerState
 from os import remove
 from pathlib import Path
+
 from loguru import logger
+
+from .context import InstaminerContext, InstaminerState
 
 
 def update_garbage_collector(ctx: InstaminerContext, post_id: str, path: str):

@@ -1,9 +1,13 @@
-from core.emit import send_new_post
-from entities.post_operations import exists_instaminer_post, save_instaminer_post
-from core.procedure import SearchConfigurations, search_by_hashtag
-from .context import InstaminerContext
 from asyncio import sleep
+
+from entities.post_operations import (exists_instaminer_post,
+                                      save_instaminer_post)
 from loguru import logger
+
+from core.emit import send_new_post
+from core.procedure import SearchConfigurations, search_by_hashtag
+
+from .context import InstaminerContext
 
 
 async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
@@ -24,7 +28,7 @@ async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
             logger.debug(msg)
 
         if ctx.amqp_connection is not None and ctx.amqp_channel is not None:
-            logger.debug(f"sending to amqp broker")
+            logger.debug(f"sending post [id={post.id}] to amqp broker ")
             send_new_post(ctx, post)
 
 

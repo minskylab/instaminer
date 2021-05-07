@@ -1,5 +1,6 @@
-from core.core import InstaloaderOptions, MinioOptions, AMQPOptions
 from os import getenv
+
+from core.options import AMQPOptions, InstaloaderOptions, MinioOptions
 from dotenv import load_dotenv
 
 load_dotenv()

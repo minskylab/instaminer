@@ -1,16 +1,14 @@
-from typing import Dict, Optional
-from peewee import Model, PostgresqlDatabase
+from dataclasses import dataclass
 from enum import Enum
-from dataclasses import dataclass
-from pika.adapters.blocking_connection import BlockingChannel
-from pika import BlockingConnection
-from dataclasses import dataclass
 from typing import Dict, Optional
-from minio import Minio
+
 from instaloader.instaloader import Instaloader
+from minio import Minio
 from peewee import Model, PostgresqlDatabase
 from pika import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
+
+from .options import AMQPOptions
 
 
 class InstaminerState(Enum):
@@ -42,3 +40,5 @@ class InstaminerContext:
     s3_bucket: Optional[str] = None
 
     PostModel: Optional[Model] = None
+
+    amqp_options: Optional[AMQPOptions] = None

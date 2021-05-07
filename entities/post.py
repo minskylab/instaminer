@@ -1,8 +1,9 @@
-from peewee import DateTimeField, Model, CharField, IntegerField, FloatField, TextField
-from typing import Optional
-from pydantic import BaseModel
 from datetime import datetime
-from peewee import PostgresqlDatabase
+from typing import Optional
+
+from peewee import (CharField, DateTimeField, FloatField, IntegerField, Model,
+                    PostgresqlDatabase, TextField)
+from pydantic import BaseModel
 
 
 class InstaminerPost(BaseModel):

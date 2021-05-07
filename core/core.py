@@ -1,27 +1,20 @@
-from core.garbage_collector import drain_images
-from pika.adapters.blocking_connection import BlockingChannel
-from pika import BlockingConnection
-from dataclasses import dataclass
-from minio import Minio
-from instaloader.instaloader import Instaloader
-from pathlib import Path
-from database import open_postgres_from_env
 from collections import defaultdict
-from pika import BlockingConnection, ConnectionParameters
-from pika.adapters.blocking_connection import BlockingChannel
 from dataclasses import dataclass
-from .context import InstaminerContext
+from pathlib import Path
 from typing import Optional
 
+from loguru import logger
 
-@dataclass
-class MinioOptions:
-    endpoint: str
-    access_key: str
-    secret_key: str
-    bucket: str
-    ssl: bool
-    region: str
+from database import open_postgres_from_env
+from instaloader.instaloader import Instaloader
+from minio import Minio
+from pika import BlockingConnection, ConnectionParameters
+from pika.adapters.blocking_connection import BlockingChannel
+
+from core.garbage_collector import drain_images
+
+from .context import InstaminerContext
+from .options import AMQPOptions, InstaloaderOptions, MinioOptions
 
 
 def open_minio(opts: MinioOptions) -> Minio:
@@ -45,12 +38,6 @@ def open_minio(opts: MinioOptions) -> Minio:
     return m_client
 
 
-@dataclass
-class InstaloaderOptions:
-    instagram_username: str
-    instagram_password: str
-
-
 def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
     loader = Instaloader(quiet=True)
     user, password = opts.instagram_username, opts.instagram_password
@@ -64,15 +51,9 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
     return loader
 
 
-@dataclass
-class AMQPOptions:
-    host: str = "localhost"
-
-
 def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
     # Tuple[BlockingConnection, BlockingChannel]
     params = ConnectionParameters(host=opts.host)
-
     connection = BlockingConnection(params)
     # channel = connection.channel()
 
@@ -80,8 +61,11 @@ def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
 
 
 def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
+    if ctx.amqp_options is None:
+        return None
+
     if ctx.amqp_connection is not None and ctx.amqp_connection.is_closed:
-        ctx.amqp_connection = ctx.amqp_connection._create_connection()
+        ctx.amqp_connection = open_amqp_connection(ctx.amqp_options)
 
     if ctx.amqp_connection is None:
         return None
@@ -107,12 +91,15 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
+    loader = open_instaloader(opts.loader_options)
+
     ctx = InstaminerContext(
-        loader=open_instaloader(opts.loader_options),
-        max_saved_memory_images=opts.max_saved_memory_images,
+        loader=loader,
         last_images=defaultdict(lambda: ""),
+        max_saved_memory_images=opts.max_saved_memory_images,
         data_dir=opts.data_dir,
         queue_name=opts.queue_name,
+        amqp_options=opts.amqp_options,
     )
 
     if not opts.minio_options is None:

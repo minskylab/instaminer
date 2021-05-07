@@ -1,7 +1,9 @@
 from typing import Optional
-from .post import InstaminerPost
-from peewee import Model, PostgresqlDatabase
+
 from loguru import logger
+from peewee import Model, PostgresqlDatabase
+
+from .post import InstaminerPost
 
 
 def exists_instaminer_post(db: PostgresqlDatabase, p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:

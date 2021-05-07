@@ -1,8 +1,8 @@
-from peewee import Model
 from typing import Tuple
-from entities.post import define_post_model
-from peewee import PostgresqlDatabase
 from urllib.parse import urlparse
+
+from entities.post import define_post_model
+from peewee import Model, PostgresqlDatabase
 
 
 def open_postgres_from_env(db_url: str) -> Tuple[PostgresqlDatabase, Model]:

@@ -1,21 +1,19 @@
-from .garbage_collector import update_garbage_collector
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import dropwhile, takewhile
 from os.path import join
 from typing import List, Optional
 
-from peewee import Model
-
 from entities.post import InstaminerPost
 from instaloader import Hashtag
 from instaloader.instaloader import Post
+from loguru import logger
+from peewee import Model
 
 from .basic_relevance import basic_relevance
 from .core import InstaminerContext
+from .garbage_collector import update_garbage_collector
 from .structures import RelevanceFunction, SearchResult
-
-from loguru import logger
 
 
 @dataclass

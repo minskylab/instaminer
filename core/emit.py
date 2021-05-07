@@ -1,8 +1,9 @@
-from .core import InstaminerContext, open_channel
-from pika.adapters.blocking_connection import BlockingChannel
-from pika.exceptions import ChannelClosed
 from entities.post import InstaminerPost
 from loguru import logger
+from pika.adapters.blocking_connection import BlockingChannel
+from pika.exceptions import ChannelClosed
+
+from .core import InstaminerContext, open_channel
 
 
 def _emit(ctx: InstaminerContext, event: str, post: InstaminerPost, max_trials: int = 3, trials: int = 0) -> None:
