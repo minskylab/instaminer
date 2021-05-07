@@ -1,10 +1,10 @@
 from typing import Optional
 from .post import InstaminerPost
-from peewee import Model
+from peewee import Model, PostgresqlDatabase
 from loguru import logger
 
 
-def exists_instaminer_post(p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:
+def exists_instaminer_post(db: PostgresqlDatabase, p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:
     post: Optional[Model] = None
 
     try:

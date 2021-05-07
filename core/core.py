@@ -1,48 +1,17 @@
-
+from core.garbage_collector import drain_images
 from pika.adapters.blocking_connection import BlockingChannel
 from pika import BlockingConnection
 from dataclasses import dataclass
-from typing import Dict, Optional
 from minio import Minio
 from instaloader.instaloader import Instaloader
 from pathlib import Path
-from peewee import Model, PostgresqlDatabase
 from database import open_postgres_from_env
-from enum import Enum
 from collections import defaultdict
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 from dataclasses import dataclass
-
-
-class InstaminerState(Enum):
-    IDLE = 0
-    RUNNING = 1
-    DRAINING = 2
-    CLOSING = 3
-
-
-@dataclass
-class InstaminerContext:
-    loader: Instaloader
-    data_dir: str
-    last_images: Dict[str, str]
-
-    state: InstaminerState = InstaminerState.IDLE
-
-    max_saved_memory_images: int = 10
-    new_post_name: str = "new_post"
-    new_post_update_name: str = "updated_post"
-
-    minio_client: Optional[Minio] = None
-    amqp_client: Optional[BlockingConnection] = None
-    amqp_channel: Optional[BlockingChannel] = None
-    db: Optional[PostgresqlDatabase] = None
-
-    s3_endpoint: Optional[str] = None
-    s3_bucket: Optional[str] = None
-
-    PostModel: Optional[Model] = None
+from .context import InstaminerContext
+from typing import Optional
 
 
 @dataclass
@@ -110,12 +79,15 @@ def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
     return connection
 
 
-def open_channel(ctx: InstaminerContext, queue_name: str) -> Optional[BlockingChannel]:
-    if ctx.amqp_client is None:
+def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
+    if ctx.amqp_connection is not None and ctx.amqp_connection.is_closed:
+        ctx.amqp_connection = ctx.amqp_connection._create_connection()
+
+    if ctx.amqp_connection is None:
         return None
 
-    channel = ctx.amqp_client.channel()
-    channel.queue_declare(queue_name)
+    channel = ctx.amqp_connection.channel()
+    channel.queue_declare(ctx.queue_name)
 
     return channel
 
@@ -140,6 +112,7 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
         max_saved_memory_images=opts.max_saved_memory_images,
         last_images=defaultdict(lambda: ""),
         data_dir=opts.data_dir,
+        queue_name=opts.queue_name,
     )
 
     if not opts.minio_options is None:
@@ -148,13 +121,15 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
         ctx.s3_bucket = opts.minio_options.bucket
 
     if not opts.amqp_options is None:
-        ctx.amqp_client = open_amqp_connection(opts.amqp_options)
-        ctx.amqp_channel = open_channel(ctx, opts.queue_name)
+        ctx.amqp_connection = open_amqp_connection(opts.amqp_options)
+        ctx.amqp_channel = open_channel(ctx)
 
     if not opts.db_url is None:
         res = open_postgres_from_env(opts.db_url)
 
         ctx.db = res[0]
         ctx.PostModel = res[1]
+
+    drain_images(ctx)
 
     return ctx

@@ -52,7 +52,7 @@ def search_by_hashtag(ctx: InstaminerContext, opts: SearchConfigurations, proces
 def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -> Optional[InstaminerPost]:
     likes = post.likes
     comments = post.comments
-    date = post.date_local
+    # date = post.date_local
     _id = post.shortcode
 
     rel = opts.relevance(likes, comments)  # type: ignore

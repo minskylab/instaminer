@@ -1,4 +1,4 @@
-from .core import InstaminerContext, InstaminerState
+from .context import InstaminerContext, InstaminerState
 from os import remove
 from pathlib import Path
 from loguru import logger

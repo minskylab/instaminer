@@ -1,9 +1,8 @@
 from core.procedure import SearchConfigurations
-from core.core import NewContextOptions, new_context, open_amqp_connection
+from core.core import NewContextOptions, new_context
 from core.looper import looper
 from settings import instaloader_options_from_env, minio_options_from_env, postgres_options_from_env, amqp_options_from_env
 from asyncio import run
-from datetime import datetime
 
 
 opts = NewContextOptions(
@@ -18,7 +17,7 @@ opts = NewContextOptions(
 ctx = new_context(opts)
 
 run(looper(ctx, SearchConfigurations(
-    query="cusco",
+    query="peru",
     delay_seconds=60*5,  # each 5min
     period_seconds=60*5,
 )))
