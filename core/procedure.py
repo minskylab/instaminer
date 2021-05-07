@@ -1,8 +1,11 @@
+from .garbage_collector import update_garbage_collector
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import dropwhile, takewhile
 from os.path import join
 from typing import List, Optional
+
+from peewee import Model
 
 from entities.post import InstaminerPost
 from instaloader import Hashtag
@@ -11,6 +14,8 @@ from instaloader.instaloader import Post
 from .basic_relevance import basic_relevance
 from .core import InstaminerContext
 from .structures import RelevanceFunction, SearchResult
+
+from loguru import logger
 
 
 @dataclass
@@ -33,7 +38,7 @@ def search_by_hashtag(ctx: InstaminerContext, opts: SearchConfigurations, proces
     since = datetime.now() - timedelta(seconds=opts.delay_seconds+opts.period_seconds)
     until = since + timedelta(seconds=opts.period_seconds)
 
-    print(f"search interval: {since} - {until}")
+    logger.info(f"searching interval: {since} - {until}")
 
     for post in takewhile(lambda p: p.date_local > since, dropwhile(lambda p: p.date_local > until, posts)):
         i_post = process_post(ctx, post, process_opts)
@@ -47,33 +52,52 @@ def search_by_hashtag(ctx: InstaminerContext, opts: SearchConfigurations, proces
 def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -> Optional[InstaminerPost]:
     likes = post.likes
     comments = post.comments
-    date = post.date_local
+    # date = post.date_local
     _id = post.shortcode
 
     rel = opts.relevance(likes, comments)  # type: ignore
 
-    print(f"\n~ [{_id}]: L: {likes}, C: {comments}, D: {date}, R: {rel}")
-
     filepath = join(ctx.data_dir, post.shortcode)
 
-    ctx.loader.download_pic(filepath, post.url, post.date)
-    print("")
+    post_x: Optional[Model] = True
 
-    bucket = ctx.s3_bucket
-    endpoint = ctx.s3_endpoint
-    folder_name = opts.folder_name
+    if ctx.PostModel is not None:
+        try:
+            post_x = ctx.PostModel.get_by_id(_id)
+        except BaseException as e:
+            post_x = None
 
-    destination = folder_name + "/" + post.shortcode + ".jpg"
+    if post_x is not None:
+        return InstaminerPost(**(post_x.__dict__["__data__"]))
 
-    full_filepath = filepath + ".jpg"
+    try:
+        ctx.loader.download_pic(filepath, post.url, post.date)
+    except BaseException as e:
+        logger.warning(e)
 
-    ctx.minio_client.fput_object(bucket,
-                                 destination,
-                                 full_filepath,
-                                 content_type="image/jpg",
-                                 metadata={"x-amz-acl": "public-read"})
+    link: str = filepath
 
-    link = f"https://{bucket}.{endpoint}/{destination}"
+    if ctx.minio_client is not None:
+        bucket = ctx.s3_bucket
+        endpoint = ctx.s3_endpoint
+        folder_name = opts.folder_name
+
+        destination = folder_name + "/" + post.shortcode + ".jpg"
+
+        full_filepath = filepath + ".jpg"
+
+        try:
+            ctx.minio_client.fput_object(bucket,
+                                         destination,
+                                         full_filepath,
+                                         content_type="image/jpg",
+                                         metadata={"x-amz-acl": "public-read"})
+
+            link = f"https://{bucket}.{endpoint}/{destination}"
+        except BaseException as e:
+            logger.warning(e)
+
+        update_garbage_collector(ctx, post.shortcode, full_filepath)
 
     full_comments: List[str] = []
 
@@ -85,10 +109,10 @@ def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -
         date=post.date_local,
         likes=post.likes,
         comments=post.comments,
-        hashtags=post.caption_hashtags,
-        mentions=post.caption_mentions,
+        hashtags=",".join(post.caption_hashtags),
+        mentions=",".join(post.caption_mentions),
         relevance=rel,
         image_uri=link,
         description=post.caption,
-        comments_content=full_comments,
+        comments_content=",".join(full_comments),
     )

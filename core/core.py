@@ -1,19 +1,17 @@
+from core.garbage_collector import drain_images
+from pika.adapters.blocking_connection import BlockingChannel
+from pika import BlockingConnection
 from dataclasses import dataclass
-from typing import Optional
 from minio import Minio
 from instaloader.instaloader import Instaloader
 from pathlib import Path
-
-
-@dataclass
-class InstaminerContext:
-    minio_client: Minio
-    loader: Instaloader
-
-    data_dir: str
-
-    s3_endpoint: Optional[str] = None
-    s3_bucket: Optional[str] = None
+from database import open_postgres_from_env
+from collections import defaultdict
+from pika import BlockingConnection, ConnectionParameters
+from pika.adapters.blocking_connection import BlockingChannel
+from dataclasses import dataclass
+from .context import InstaminerContext
+from typing import Optional
 
 
 @dataclass
@@ -54,7 +52,7 @@ class InstaloaderOptions:
 
 
 def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
-    loader = Instaloader()
+    loader = Instaloader(quiet=True)
     user, password = opts.instagram_username, opts.instagram_password
 
     try:
@@ -67,22 +65,71 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
 
 
 @dataclass
-class NewContextOptions:
-    minio_options: MinioOptions
-    loader_options: InstaloaderOptions
+class AMQPOptions:
+    host: str = "localhost"
 
+
+def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
+    # Tuple[BlockingConnection, BlockingChannel]
+    params = ConnectionParameters(host=opts.host)
+
+    connection = BlockingConnection(params)
+    # channel = connection.channel()
+
+    return connection
+
+
+def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
+    if ctx.amqp_connection is not None and ctx.amqp_connection.is_closed:
+        ctx.amqp_connection = ctx.amqp_connection._create_connection()
+
+    if ctx.amqp_connection is None:
+        return None
+
+    channel = ctx.amqp_connection.channel()
+    channel.queue_declare(ctx.queue_name)
+
+    return channel
+
+
+@dataclass
+class NewContextOptions:
+    loader_options: InstaloaderOptions
     data_dir: str = "data/"
+    queue_name: str = "instaminer"
+    max_saved_memory_images: int = 10
+    minio_options: Optional[MinioOptions] = None
+    amqp_options: Optional[AMQPOptions] = None
+    db_url: Optional[str] = None
 
 
 def new_context(opts: NewContextOptions) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
-    return InstaminerContext(
-        minio_client=open_minio(opts.minio_options),
+    ctx = InstaminerContext(
         loader=open_instaloader(opts.loader_options),
+        max_saved_memory_images=opts.max_saved_memory_images,
+        last_images=defaultdict(lambda: ""),
         data_dir=opts.data_dir,
-
-        s3_endpoint=opts.minio_options.endpoint,
-        s3_bucket=opts.minio_options.bucket,
+        queue_name=opts.queue_name,
     )
+
+    if not opts.minio_options is None:
+        ctx.minio_client = open_minio(opts.minio_options)
+        ctx.s3_endpoint = opts.minio_options.endpoint
+        ctx.s3_bucket = opts.minio_options.bucket
+
+    if not opts.amqp_options is None:
+        ctx.amqp_connection = open_amqp_connection(opts.amqp_options)
+        ctx.amqp_channel = open_channel(ctx)
+
+    if not opts.db_url is None:
+        res = open_postgres_from_env(opts.db_url)
+
+        ctx.db = res[0]
+        ctx.PostModel = res[1]
+
+    drain_images(ctx)
+
+    return ctx
