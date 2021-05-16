@@ -17,7 +17,7 @@ opts = NewContextOptions(
 ctx = new_context(opts)
 
 run(looper(ctx, SearchConfigurations(
-    query="peru",
+    query="cusco",
     delay_seconds=5*60,  # each 5min
     period_seconds=5*60,
 )))
