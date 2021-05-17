@@ -1,0 +1,33 @@
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  TAG: "0.2.1"
+
+tasks:
+  start:
+    cmds:
+      - poetry run python run.py
+
+  publish-docker:
+    cmds:
+      - docker build -t minskylab/instaminer:{{.TAG}} -t minskylab/instaminer -t minskylab/instaminer:latest .
+      - docker push minskylab/instaminer --all-tags
+
+  feature:
+    cmds:
+      - "git flow feature start '{{.NAME}}'"
+      - 'bit save "feat: {{.DESCRIPTION}}"'
+      - "git flow feature finish"
+      - "git push"
+  release:
+    cmds:
+      - "git flow release start '{{.TAG}}'"
+      - 'bit save "release: {{.DESCRIPTION}}"'
+      - "git flow release finish"
+      - "git push"
+      - "git checkout main"
+      - "git push"
+      - "git push origin '{{.TAG}}'"
+      - "git checkout dev"
