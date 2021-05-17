@@ -1,5 +1,7 @@
-from os import remove
+from os import listdir, remove, unlink
+from os.path import isdir, isfile, islink, join
 from pathlib import Path
+from shutil import rmtree
 
 from loguru import logger
 
@@ -17,11 +19,10 @@ def drain_images(ctx: InstaminerContext):
     logger.warning("cleaning files data directory")
 
     previous_state = ctx.state
-
     ctx.state = InstaminerState.DRAINING
 
     to_delete = ctx.last_images.values()
-    # logger.info(to_delete)
+
     for img_path in to_delete:
         try:
             final_path = str(Path(img_path).resolve())
@@ -31,3 +32,18 @@ def drain_images(ctx: InstaminerContext):
 
     ctx.last_images.clear()
     ctx.state = previous_state
+
+
+def purge_all_data_dir(ctx: InstaminerContext):
+    data_dir = str(Path(ctx.data_dir).resolve())
+
+    for filename in listdir(data_dir):
+
+        file_path = join(data_dir, filename)
+        try:
+            if isfile(file_path) or islink(file_path):
+                unlink(file_path)
+            elif isdir(file_path):
+                rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))

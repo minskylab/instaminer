@@ -1,3 +1,4 @@
+from core.context import InstaminerContext
 from typing import Optional
 
 from loguru import logger
@@ -6,11 +7,17 @@ from peewee import Model, PostgresqlDatabase
 from .post import InstaminerPost
 
 
-def exists_instaminer_post(db: PostgresqlDatabase, p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:
+def exists_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
+    if ctx.db is None or ctx.PostModel is None:
+        return None
+
+    if ctx.db.connect(True):
+        logger.warning("db reconnected")
+
     post: Optional[Model] = None
 
     try:
-        post = PostModel.get_by_id(p.id)
+        post = ctx.PostModel.get_by_id(p.id)
     except BaseException as e:
         post = None
 
@@ -20,13 +27,18 @@ def exists_instaminer_post(db: PostgresqlDatabase, p: InstaminerPost, PostModel:
     return None
 
 
-def save_instaminer_post(p: InstaminerPost, PostModel: Model) -> Optional[InstaminerPost]:
+def save_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
     # TODO: FIX THIS SHIT
+    if ctx.db is None or ctx.PostModel is None:
+        return None
+
+    if ctx.db.connect(True):
+        logger.warning("db reconnected")
 
     post: Optional[Model] = None
 
     try:
-        post = PostModel.get_by_id(p.id)
+        post = ctx.PostModel.get_by_id(p.id)
     except BaseException as e:
         post = None
 
@@ -48,12 +60,12 @@ def save_instaminer_post(p: InstaminerPost, PostModel: Model) -> Optional[Instam
 
     # Bulshit
     try:
-        post = PostModel.create(**payload)
+        post = ctx.PostModel.create(**payload)
     except BaseException as e:
         logger.warning(e)
 
         try:
-            post = PostModel(**payload).save()
+            post = ctx.PostModel(**payload).save()
         except BaseException as e:
             logger.error(e)
         finally:
