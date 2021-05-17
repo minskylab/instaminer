@@ -20,9 +20,9 @@ async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
 
             msg = f"error at try to resolve found post [id={post.id}]"
 
-            if exists_instaminer_post(ctx.db, post, ctx.PostModel) is not None:
+            if exists_instaminer_post(ctx, post) is not None:
                 msg = f"found post [id={post.id}] into DB [name={ctx.db.database}]"
-            elif save_instaminer_post(post, ctx.PostModel) is not None:
+            elif save_instaminer_post(ctx, post) is not None:
                 msg = f"created post [id={post.id}] into DB [name={ctx.db.database}]"
 
             logger.debug(msg)

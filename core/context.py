@@ -38,6 +38,7 @@ class InstaminerContext:
 
     s3_endpoint: Optional[str] = None
     s3_bucket: Optional[str] = None
+    db_url: Optional[str] = None
 
     PostModel: Optional[Model] = None
 

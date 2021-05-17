@@ -3,15 +3,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from loguru import logger
-
 from database import open_postgres_from_env
 from instaloader.instaloader import Instaloader
 from minio import Minio
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 
-from core.garbage_collector import drain_images
+from core.garbage_collector import drain_images, purge_all_data_dir
 
 from .context import InstaminerContext
 from .options import AMQPOptions, InstaloaderOptions, MinioOptions
@@ -87,7 +85,7 @@ class NewContextOptions:
     db_url: Optional[str] = None
 
 
-def new_context(opts: NewContextOptions) -> InstaminerContext:
+def new_context(opts: NewContextOptions, clean_data_dir: bool = True) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
@@ -100,6 +98,7 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
         data_dir=opts.data_dir,
         queue_name=opts.queue_name,
         amqp_options=opts.amqp_options,
+        db_url=opts.db_url,
     )
 
     if not opts.minio_options is None:
@@ -117,6 +116,7 @@ def new_context(opts: NewContextOptions) -> InstaminerContext:
         ctx.db = res[0]
         ctx.PostModel = res[1]
 
-    drain_images(ctx)
+    purge_all_data_dir(ctx)
+    # drain_images(ctx)
 
     return ctx
