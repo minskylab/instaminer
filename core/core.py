@@ -1,29 +1,18 @@
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional
-from minio import Minio
-from instaloader.instaloader import Instaloader
 from pathlib import Path
+from typing import Optional
 
+from database import open_postgres_from_env
+from instaloader.instaloader import Instaloader
+from minio import Minio
+from pika import BlockingConnection, ConnectionParameters
+from pika.adapters.blocking_connection import BlockingChannel
 
-@dataclass
-class InstaminerContext:
-    minio_client: Minio
-    loader: Instaloader
+from core.garbage_collector import drain_images, purge_all_data_dir
 
-    data_dir: str
-
-    s3_endpoint: Optional[str] = None
-    s3_bucket: Optional[str] = None
-
-
-@dataclass
-class MinioOptions:
-    endpoint: str
-    access_key: str
-    secret_key: str
-    bucket: str
-    ssl: bool
-    region: str
+from .context import InstaminerContext
+from .options import AMQPOptions, InstaloaderOptions, MinioOptions
 
 
 def open_minio(opts: MinioOptions) -> Minio:
@@ -47,14 +36,8 @@ def open_minio(opts: MinioOptions) -> Minio:
     return m_client
 
 
-@dataclass
-class InstaloaderOptions:
-    instagram_username: str
-    instagram_password: str
-
-
 def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
-    loader = Instaloader()
+    loader = Instaloader(quiet=True)
     user, password = opts.instagram_username, opts.instagram_password
 
     try:
@@ -66,23 +49,74 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
     return loader
 
 
+def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
+    # Tuple[BlockingConnection, BlockingChannel]
+    params = ConnectionParameters(host=opts.host)
+    connection = BlockingConnection(params)
+    # channel = connection.channel()
+
+    return connection
+
+
+def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
+    if ctx.amqp_options is None:
+        return None
+
+    if ctx.amqp_connection is not None and ctx.amqp_connection.is_closed:
+        ctx.amqp_connection = open_amqp_connection(ctx.amqp_options)
+
+    if ctx.amqp_connection is None:
+        return None
+
+    channel = ctx.amqp_connection.channel()
+    channel.queue_declare(ctx.queue_name)
+
+    return channel
+
+
 @dataclass
 class NewContextOptions:
-    minio_options: MinioOptions
     loader_options: InstaloaderOptions
-
     data_dir: str = "data/"
+    queue_name: str = "instaminer"
+    max_saved_memory_images: int = 10
+    minio_options: Optional[MinioOptions] = None
+    amqp_options: Optional[AMQPOptions] = None
+    db_url: Optional[str] = None
 
 
-def new_context(opts: NewContextOptions) -> InstaminerContext:
+def new_context(opts: NewContextOptions, clean_data_dir: bool = True) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
-    return InstaminerContext(
-        minio_client=open_minio(opts.minio_options),
-        loader=open_instaloader(opts.loader_options),
-        data_dir=opts.data_dir,
+    loader = open_instaloader(opts.loader_options)
 
-        s3_endpoint=opts.minio_options.endpoint,
-        s3_bucket=opts.minio_options.bucket,
+    ctx = InstaminerContext(
+        loader=loader,
+        last_images=defaultdict(lambda: ""),
+        max_saved_memory_images=opts.max_saved_memory_images,
+        data_dir=opts.data_dir,
+        queue_name=opts.queue_name,
+        amqp_options=opts.amqp_options,
+        db_url=opts.db_url,
     )
+
+    if not opts.minio_options is None:
+        ctx.minio_client = open_minio(opts.minio_options)
+        ctx.s3_endpoint = opts.minio_options.endpoint
+        ctx.s3_bucket = opts.minio_options.bucket
+
+    if not opts.amqp_options is None:
+        ctx.amqp_connection = open_amqp_connection(opts.amqp_options)
+        ctx.amqp_channel = open_channel(ctx)
+
+    if not opts.db_url is None:
+        res = open_postgres_from_env(opts.db_url)
+
+        ctx.db = res[0]
+        ctx.PostModel = res[1]
+
+    purge_all_data_dir(ctx)
+    # drain_images(ctx)
+
+    return ctx

@@ -1,11 +1,13 @@
-from typing import Union
-from dotenv import load_dotenv
-from core.core import InstaloaderOptions, MinioOptions
 from os import getenv
+
+from core.options import AMQPOptions, InstaloaderOptions, MinioOptions
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def minio_options_from_env() -> MinioOptions:
-    load_dotenv()
+    # load_dotenv()
 
     ssl: bool = True
 
@@ -22,10 +24,24 @@ def minio_options_from_env() -> MinioOptions:
     )
 
 
-def instaloader_from_env() -> InstaloaderOptions:
-    load_dotenv()
+def instaloader_options_from_env() -> InstaloaderOptions:
+    # load_dotenv()
 
     return InstaloaderOptions(
         instagram_username=getenv("IG_USERNAME", ""),
         instagram_password=getenv("IG_PASSWORD", ""),
+    )
+
+
+def postgres_options_from_env() -> str:
+    # load_dotenv()
+
+    return getenv("DB_URL", "")
+
+
+def amqp_options_from_env() -> AMQPOptions:
+    # load_dotenv()
+
+    return AMQPOptions(
+        host=getenv("AMQP_HOST", "localhost")
     )

@@ -1,35 +1,38 @@
-from peewee import PrimaryKeyField
-from peewee import Model, PrimaryKeyField, DateField, CharField, IntegerField, FloatField
-from database import db
-from typing import List, Optional
-from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
+
+from peewee import (CharField, DateTimeField, FloatField, IntegerField, Model,
+                    PostgresqlDatabase, TextField)
+from pydantic import BaseModel
 
 
 class InstaminerPost(BaseModel):
     id: str
     date: datetime
-    hashtags: List[str]
-    mentions: List[str]
+    hashtags: str
+    mentions: str
     image_uri: str
     likes: int
     comments: int
     relevance: float
-    description: str
-    comments_content: Optional[List[str]]
+    description: Optional[str]
+    comments_content: Optional[str]
 
 
-class PostModel(Model):
-    id = PrimaryKeyField()
-    date = DateField()
-    hashtags = CharField()
-    mentions = CharField()
-    image_uri = CharField()
-    likes = IntegerField()
-    comments = IntegerField()
-    relevance = FloatField()
-    description = CharField()
-    comments_content = CharField()
+def define_post_model(db: PostgresqlDatabase) -> Model:
+    class PostModel(Model):
+        id = CharField(primary_key=True)
+        date = DateTimeField()
+        hashtags = TextField()
+        mentions = TextField()
+        image_uri = TextField()
+        likes = IntegerField()
+        comments = IntegerField()
+        relevance = FloatField()
+        description = TextField()
+        comments_content = TextField()
 
-    class Meta:
-        database = db
+        class Meta:
+            database = db
+
+    return PostModel

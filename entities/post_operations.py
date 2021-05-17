@@ -1,10 +1,51 @@
-
+from core.context import InstaminerContext
 from typing import Optional
-from .post import PostModel, InstaminerPost
+
+from loguru import logger
+from peewee import Model, PostgresqlDatabase
+
+from .post import InstaminerPost
 
 
-def save_instaminer_post(p: InstaminerPost) -> Optional[InstaminerPost]:
-    post = PostModel(
+def exists_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
+    if ctx.db is None or ctx.PostModel is None:
+        return None
+
+    if ctx.db.connect(True):
+        logger.warning("db reconnected")
+
+    post: Optional[Model] = None
+
+    try:
+        post = ctx.PostModel.get_by_id(p.id)
+    except BaseException as e:
+        post = None
+
+    if post is not None:
+        return InstaminerPost(**(post.__dict__["__data__"]))
+
+    return None
+
+
+def save_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
+    # TODO: FIX THIS SHIT
+    if ctx.db is None or ctx.PostModel is None:
+        return None
+
+    if ctx.db.connect(True):
+        logger.warning("db reconnected")
+
+    post: Optional[Model] = None
+
+    try:
+        post = ctx.PostModel.get_by_id(p.id)
+    except BaseException as e:
+        post = None
+
+    if post is not None:
+        return InstaminerPost(**(post.__dict__["__data__"]))
+
+    payload = dict(
         id=p.id,
         date=p.date,
         hashtags=p.hashtags,
@@ -17,11 +58,18 @@ def save_instaminer_post(p: InstaminerPost) -> Optional[InstaminerPost]:
         comments_content=p.comments_content,
     )
 
+    # Bulshit
     try:
-        post.save()
+        post = ctx.PostModel.create(**payload)
     except BaseException as e:
-        print(e)
-        return None
+        logger.warning(e)
+
+        try:
+            post = ctx.PostModel(**payload).save()
+        except BaseException as e:
+            logger.error(e)
+        finally:
+            return None
 
     return InstaminerPost(
         id=post.id,

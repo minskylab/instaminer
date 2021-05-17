@@ -1,4 +1,5 @@
 from typing import Callable, Generator
+
 from entities.post import InstaminerPost
 
 RelevanceFunction = Callable[[int, int], float]
