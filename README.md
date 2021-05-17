@@ -13,6 +13,6 @@ Tasks:
 - [ ] API for triggering.
 - [ ] API for event sending.
 - [ ] Documentation.
-- [ ] FIX POSTGRES CONNECTION COLLAPSE (probably async problems).
+- [x] FIX POSTGRES CONNECTION COLLAPSE (probably async problems).
 - [x] Garbage Collector Algorithm based in total images.
 - [x] AMQP Working with other services.
