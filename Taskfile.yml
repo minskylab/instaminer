@@ -12,7 +12,7 @@ tasks:
 
   publish-docker:
     cmds:
-      - docker build -t minskylab/instaminer:{{.TAG}} -t minskylab/instaminer -t minskylab/instaminer:latest .
+      - docker buildx build --push --platform linux/amd64,linux/arm/v7 -t minskylab/instaminer:{{.TAG}} -t minskylab/instaminer:latest .
       - docker push minskylab/instaminer --all-tags
 
   feature:

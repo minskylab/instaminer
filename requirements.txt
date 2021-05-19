@@ -17,7 +17,7 @@ mypy-extensions==0.4.3
 pathspec==0.8.1
 peewee==3.14.4
 pika==1.2.0
-psycopg2-binary==2.8.6
+psycopg2==2.8.6
 pycodestyle==2.7.0
 pydantic==1.8.2
 python-dotenv==0.17.1
