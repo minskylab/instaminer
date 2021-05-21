@@ -14,6 +14,8 @@ from core.garbage_collector import drain_images, purge_all_data_dir
 from .context import InstaminerContext
 from .options import AMQPOptions, InstaloaderOptions, MinioOptions
 
+from loguru import logger
+
 
 def open_minio(opts: MinioOptions) -> Minio:
     endpoint = opts.endpoint
@@ -49,6 +51,11 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
     return loader
 
 
+def open_anonymous_instaloader() -> Instaloader:
+    loader = Instaloader(quiet=True)
+    return loader
+
+
 def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
     # Tuple[BlockingConnection, BlockingChannel]
     params = ConnectionParameters(host=opts.host)
@@ -76,20 +83,26 @@ def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
 
 @dataclass
 class NewContextOptions:
-    loader_options: InstaloaderOptions
     data_dir: str = "data/"
     queue_name: str = "instaminer"
     max_saved_memory_images: int = 10
+    loader_options: Optional[InstaloaderOptions] = None
     minio_options: Optional[MinioOptions] = None
     amqp_options: Optional[AMQPOptions] = None
     db_url: Optional[str] = None
 
 
-def new_context(opts: NewContextOptions, clean_data_dir: bool = True) -> InstaminerContext:
+def new_context(opts: NewContextOptions) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
-    loader = open_instaloader(opts.loader_options)
+    loader: Optional[Instaloader] = None
+
+    if opts.loader_options is None:
+        loader = open_anonymous_instaloader()
+        logger.warning("instagram anonymous session activated.")
+    else:
+        loader = open_instaloader(opts.loader_options)
 
     ctx = InstaminerContext(
         loader=loader,

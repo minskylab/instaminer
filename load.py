@@ -6,9 +6,10 @@ from core.core import NewContextOptions
 def default_context_options() -> NewContextOptions:
     loader_options = instaloader_options_from_env()
 
-    if loader_options is None:
-        raise BaseException(
-            "we need a instagram credentials for an authorized session")
+    # if loader_options is None:
+
+    # raise BaseException(
+    #     "we need a instagram credentials for an authorized session")
 
     return NewContextOptions(
         loader_options=loader_options,
