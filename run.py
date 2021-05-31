@@ -8,14 +8,18 @@ from load import default_context_options
 from settings.env import load_search_configuration
 from loguru import logger
 
-load_dotenv()
 
-opts = default_context_options()
+async def main():
+    load_dotenv()
 
-ctx = new_context(opts)
+    opts = default_context_options()
+    print(opts)
+    ctx = await new_context(opts)
 
-search = load_search_configuration()
+    # search = load_search_configuration()
 
-logger.info(search)
+    # logger.info(search)
 
-run(looper(ctx, search))
+    # await looper(ctx, search)
+
+run(main())

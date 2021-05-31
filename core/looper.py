@@ -1,7 +1,7 @@
 from asyncio import sleep
 
-from entities.post_operations import (exists_instaminer_post,
-                                      save_instaminer_post)
+from database.new import (exists_instaminer_post_v2,
+                          save_instaminer_post_v2)
 from loguru import logger
 
 from core.emit import send_new_post
@@ -15,15 +15,15 @@ async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
         msg = f"post found [id={post.id}] | L: {post.likes}, C: {post.comments}, D: {post.date}, R: {round(post.relevance, 3)}"
         logger.info(msg)
 
-        if ctx.db is not None:
+        if ctx.db_connection is not None:
             logger.debug(f"trying to save post [id={post.id}]")
 
             msg = f"error at try to resolve found post [id={post.id}]"
 
-            if exists_instaminer_post(ctx, post) is not None:
-                msg = f"found post [id={post.id}] into DB [name={ctx.db.database}]"
-            elif save_instaminer_post(ctx, post) is not None:
-                msg = f"created post [id={post.id}] into DB [name={ctx.db.database}]"
+            if await exists_instaminer_post_v2(ctx, post) is not None:
+                msg = f"found post [id={post.id}] into DB [name={ctx.db_connection.database}]"
+            elif await save_instaminer_post_v2(ctx, post) is not None:
+                msg = f"created post [id={post.id}] into DB [name={ctx.db_connection.database}]"
 
             logger.debug(msg)
 

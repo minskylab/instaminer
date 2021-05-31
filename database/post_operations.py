@@ -4,14 +4,14 @@ from typing import Optional
 from loguru import logger
 from peewee import Model, PostgresqlDatabase
 
-from .post import InstaminerPost
+from entities.post import InstaminerPost
 
 
 def exists_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
-    if ctx.db is None or ctx.PostModel is None:
+    if ctx.db_connection is None or ctx.PostModel is None:
         return None
 
-    if ctx.db.connect(True):
+    if ctx.db_connection.connect(True):
         logger.warning("db reconnected")
 
     post: Optional[Model] = None
@@ -29,10 +29,10 @@ def exists_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optiona
 
 def save_instaminer_post(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
     # TODO: FIX THIS SHIT
-    if ctx.db is None or ctx.PostModel is None:
+    if ctx.db_connection is None or ctx.PostModel is None:
         return None
 
-    if ctx.db.connect(True):
+    if ctx.db_connection.connect(True):
         logger.warning("db reconnected")
 
     post: Optional[Model] = None
