@@ -5,3 +5,6 @@
 data
 __pycache__
 session
+.pdm.toml
+__pypackages__
+*.egg-info
