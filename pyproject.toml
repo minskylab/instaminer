@@ -25,6 +25,7 @@ dependencies = [
     "pika~=1.2",
     "loguru~=0.5",
     "psycopg2-binary~=2.8",
+    "asyncpg~=0.23",
 ]
 requires-python = ">=3.9"
 dynamic = ["classifiers"]

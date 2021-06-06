@@ -18,7 +18,6 @@ tasks:
     cmds:
       - task: freeze
       - docker buildx build --push --platform linux/amd64,linux/arm/v7 -t minskylab/instaminer:{{.TAG}} -t minskylab/instaminer:latest .
-      - docker push minskylab/instaminer --all-tags
 
   feature:
     cmds:

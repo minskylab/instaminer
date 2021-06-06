@@ -4,10 +4,9 @@ from typing import Dict, Optional
 
 from instaloader.instaloader import Instaloader
 from minio import Minio
-from peewee import Model, PostgresqlDatabase
 from pika import BlockingConnection
 from pika.adapters.blocking_connection import BlockingChannel
-
+from asyncpg import Connection
 from .options import AMQPOptions
 
 
@@ -34,12 +33,10 @@ class InstaminerContext:
     minio_client: Optional[Minio] = None
     amqp_connection: Optional[BlockingConnection] = None
     amqp_channel: Optional[BlockingChannel] = None
-    db: Optional[PostgresqlDatabase] = None
+    db_connection: Optional[Connection] = None
 
     s3_endpoint: Optional[str] = None
     s3_bucket: Optional[str] = None
     db_url: Optional[str] = None
-
-    PostModel: Optional[Model] = None
 
     amqp_options: Optional[AMQPOptions] = None
