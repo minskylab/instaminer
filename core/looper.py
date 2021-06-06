@@ -1,6 +1,6 @@
 from asyncio import sleep
 
-from database.new import (exists_instaminer_post_v2,
+from database.new import (exists_instaminer_post_v2, open_postgres_from_env_v2,
                           save_instaminer_post_v2)
 from loguru import logger
 
@@ -19,6 +19,9 @@ async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
         logger.info(msg)
 
         if ctx.db_connection is not None:
+            if ctx.db_connection.is_closed() and ctx.db_url is not None:
+                ctx.db_connection = await open_postgres_from_env_v2(ctx.db_url)
+
             logger.debug(f"trying to save post [id={post.id}]")
 
             msg = f"error at try to resolve found post [id={post.id}]"
