@@ -10,6 +10,9 @@ from core.procedure import SearchConfigurations, search_by_hashtag
 from .context import InstaminerContext
 
 
+POST_TABLE_NAME = "postmodel"
+
+
 async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
     for post in search_by_hashtag(ctx, config):
         msg = f"post found [id={post.id}] | L: {post.likes}, C: {post.comments}, D: {post.date}, R: {round(post.relevance, 3)}"
@@ -21,9 +24,9 @@ async def search_tick(ctx: InstaminerContext, config: SearchConfigurations):
             msg = f"error at try to resolve found post [id={post.id}]"
 
             if await exists_instaminer_post_v2(ctx, post) is not None:
-                msg = f"found post [id={post.id}] into DB [name={ctx.db_connection.database}]"
+                msg = f"found post [id={post.id}] into DB [name={POST_TABLE_NAME}]"
             elif await save_instaminer_post_v2(ctx, post) is not None:
-                msg = f"created post [id={post.id}] into DB [name={ctx.db_connection.database}]"
+                msg = f"created post [id={post.id}] into DB [name={POST_TABLE_NAME}]"
 
             logger.debug(msg)
 

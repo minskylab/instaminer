@@ -9,7 +9,7 @@ from minio import Minio
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 
-from core.garbage_collector import drain_images, purge_all_data_dir
+from core.garbage_collector import purge_all_data_dir
 
 from .context import InstaminerContext
 from .options import AMQPOptions, InstaloaderOptions, MinioOptions
@@ -124,10 +124,9 @@ async def new_context(opts: NewContextOptions) -> InstaminerContext:
         ctx.amqp_channel = open_channel(ctx)
 
     if not opts.db_url is None:
-        # ctx.db_connection = await open_postgres_from_env_v2(opts.db_url)
+        ctx.db_connection = await open_postgres_from_env_v2(opts.db_url)
         pass
 
     purge_all_data_dir(ctx)
-    # drain_images(ctx)
 
     return ctx

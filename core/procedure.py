@@ -8,7 +8,6 @@ from entities.post import InstaminerPost
 from instaloader import Hashtag
 from instaloader.instaloader import Post
 from loguru import logger
-from peewee import Model
 
 from .basic_relevance import basic_relevance
 from .core import InstaminerContext
@@ -51,22 +50,22 @@ def process_post(ctx: InstaminerContext, post: Post, opts: ProcessPostOptions) -
     likes = post.likes
     comments = post.comments
     # date = post.date_local
-    _id = post.shortcode
+    # _id = post.shortcode
 
     rel = opts.relevance(likes, comments)  # type: ignore
 
     filepath = join(ctx.data_dir, post.shortcode)
 
-    post_x: Optional[Model] = True
+    # post_x: Optional[Model] = True
 
-    if ctx.PostModel is not None:
-        try:
-            post_x = ctx.PostModel.get_by_id(_id)
-        except BaseException as e:
-            post_x = None
+    # if ctx.PostModel is not None:
+    #     try:
+    #         post_x = ctx.PostModel.get_by_id(_id)
+    #     except BaseException as e:
+    #         post_x = None
 
-    if post_x is not None:
-        return InstaminerPost(**(post_x.__dict__["__data__"]))
+    # if post_x is not None:
+    # return InstaminerPost(**(post_x.__dict__["__data__"]))
 
     try:
         ctx.loader.download_pic(filepath, post.url, post.date)

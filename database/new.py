@@ -4,7 +4,6 @@ from core.context import InstaminerContext
 from asyncpg import Connection, connect, Record
 from loguru import logger
 
-
 POST_TABLE_NAME = "postmodel"
 
 
@@ -13,12 +12,19 @@ async def open_postgres_from_env_v2(db_url: str) -> Connection:
 
 
 async def exists_instaminer_post_v2(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
-    q = f"SELECT * FROM ${POST_TABLE_NAME} WHERE id = $1"
+    q = f"SELECT * FROM {POST_TABLE_NAME} WHERE id = $1"
 
     try:
+        if ctx.db_connection is None:
+            logger.error("db_connection is None")
+            return None
+
         row: Record = await ctx.db_connection.fetchrow(q, p.id)
     except BaseException as e:
         logger.error(e)
+        return None
+
+    if row is None:
         return None
 
     return InstaminerPost(**dict(row))
@@ -26,7 +32,7 @@ async def exists_instaminer_post_v2(ctx: InstaminerContext, p: InstaminerPost) -
 
 async def save_instaminer_post_v2(ctx: InstaminerContext, p: InstaminerPost) -> Optional[InstaminerPost]:
     insertion_query = f"""
-    INSERT INTO ${POST_TABLE_NAME}(
+    INSERT INTO {POST_TABLE_NAME}(
         id,
         date,
         hashtags,
@@ -41,6 +47,10 @@ async def save_instaminer_post_v2(ctx: InstaminerContext, p: InstaminerPost) -> 
     """
 
     try:
+        if ctx.db_connection is None:
+            logger.error("db_connection is None")
+            return None
+
         res = await ctx.db_connection.execute(
             insertion_query,
             p.id,
@@ -51,11 +61,10 @@ async def save_instaminer_post_v2(ctx: InstaminerContext, p: InstaminerPost) -> 
             p.likes,
             p.comments,
             p.relevance,
-            p.description,
+            p.description or "empty",
             p.comments_content,
         )
 
-        logger.info(res)
     except BaseException as e:
         logger.error(e)
         return None

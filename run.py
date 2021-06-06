@@ -13,13 +13,13 @@ async def main():
     load_dotenv()
 
     opts = default_context_options()
-    print(opts)
+    # print(opts)
     ctx = await new_context(opts)
 
-    # search = load_search_configuration()
+    search = load_search_configuration()
 
-    # logger.info(search)
+    logger.info(search)
 
-    # await looper(ctx, search)
+    await looper(ctx, search)
 
 run(main())
