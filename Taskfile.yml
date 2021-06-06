@@ -3,7 +3,7 @@ version: "3"
 dotenv: [".env"]
 
 vars:
-  TAG: "0.2.1"
+  TAG: "0.2.5"
 
 tasks:
   start:

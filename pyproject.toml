@@ -19,12 +19,10 @@ authors = [{name = "Bregy Malpartida", email = "bregy@minsky.cc"}]
 dependencies = [
     "instaloader~=4.7",
     "pydantic~=1.8",
-    "peewee~=3.14",
     "python-dotenv~=0.17",
     "minio~=7.0",
     "pika~=1.2",
     "loguru~=0.5",
-    "psycopg2-binary~=2.8",
     "asyncpg~=0.23",
 ]
 requires-python = ">=3.9"
