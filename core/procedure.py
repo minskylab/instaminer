@@ -38,7 +38,12 @@ def search_by_hashtag(ctx: InstaminerContext, opts: SearchConfigurations, proces
     logger.info(f"searching interval: {since} - {until}")
 
     for post in takewhile(lambda p: p.date_local > since, dropwhile(lambda p: p.date_local > until, posts)):
-        i_post = process_post(ctx, post, process_opts)
+        i_post = None
+        
+        try:
+            i_post = process_post(ctx, post, process_opts)
+        except BaseException as e:
+            logger.error(f"error at process post: {e}")
 
         if i_post is None:
             continue
