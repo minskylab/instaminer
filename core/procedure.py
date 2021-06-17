@@ -44,6 +44,7 @@ def search_by_hashtag(ctx: InstaminerContext, opts: SearchConfigurations, proces
             i_post = process_post(ctx, post, process_opts)
         except BaseException as e:
             logger.error(f"error at process post: {e}")
+            break
 
         if i_post is None:
             continue
