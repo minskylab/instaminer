@@ -1,5 +1,7 @@
 [tool.pdm]
 includes = []
+[tool.pdm.scripts]
+start = "pdm run python run.py"
 
 [tool.pdm.dev-dependencies]
 dev = [
