@@ -1,18 +1,20 @@
 from collections import defaultdict
+from database.new import open_postgres_from_env_v2
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from database import open_postgres_from_env
 from instaloader.instaloader import Instaloader
 from minio import Minio
 from pika import BlockingConnection, ConnectionParameters
 from pika.adapters.blocking_connection import BlockingChannel
 
-from core.garbage_collector import drain_images, purge_all_data_dir
+from core.garbage_collector import purge_all_data_dir
 
 from .context import InstaminerContext
 from .options import AMQPOptions, InstaloaderOptions, MinioOptions
+
+from loguru import logger
 
 
 def open_minio(opts: MinioOptions) -> Minio:
@@ -49,6 +51,11 @@ def open_instaloader(opts: InstaloaderOptions) -> Instaloader:
     return loader
 
 
+def open_anonymous_instaloader() -> Instaloader:
+    loader = Instaloader(quiet=True)
+    return loader
+
+
 def open_amqp_connection(opts: AMQPOptions) -> BlockingConnection:
     # Tuple[BlockingConnection, BlockingChannel]
     params = ConnectionParameters(host=opts.host)
@@ -76,20 +83,26 @@ def open_channel(ctx: InstaminerContext) -> Optional[BlockingChannel]:
 
 @dataclass
 class NewContextOptions:
-    loader_options: InstaloaderOptions
     data_dir: str = "data/"
     queue_name: str = "instaminer"
     max_saved_memory_images: int = 10
+    loader_options: Optional[InstaloaderOptions] = None
     minio_options: Optional[MinioOptions] = None
     amqp_options: Optional[AMQPOptions] = None
     db_url: Optional[str] = None
 
 
-def new_context(opts: NewContextOptions, clean_data_dir: bool = True) -> InstaminerContext:
+async def new_context(opts: NewContextOptions) -> InstaminerContext:
     # create data dir (if not exist)
     Path(opts.data_dir).mkdir(exist_ok=True)
 
-    loader = open_instaloader(opts.loader_options)
+    loader: Optional[Instaloader] = None
+
+    if opts.loader_options is None:
+        loader = open_anonymous_instaloader()
+        logger.warning("instagram anonymous session activated.")
+    else:
+        loader = open_instaloader(opts.loader_options)
 
     ctx = InstaminerContext(
         loader=loader,
@@ -111,12 +124,9 @@ def new_context(opts: NewContextOptions, clean_data_dir: bool = True) -> Instami
         ctx.amqp_channel = open_channel(ctx)
 
     if not opts.db_url is None:
-        res = open_postgres_from_env(opts.db_url)
-
-        ctx.db = res[0]
-        ctx.PostModel = res[1]
+        ctx.db_connection = await open_postgres_from_env_v2(opts.db_url)
+        pass
 
     purge_all_data_dir(ctx)
-    # drain_images(ctx)
 
     return ctx

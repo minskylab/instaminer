@@ -1,25 +1,35 @@
-[tool.poetry]
+[tool.pdm]
+includes = []
+[tool.pdm.scripts]
+start = "pdm run python run.py"
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "autopep8<2.0.0,>=1.5.6",
+    "mypy<1.0,>=0.812",
+]
+
+[build-system]
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"
+
+[project]
 name = "instaminer"
 version = "0.1.0"
 description = "A research tool for hashtag dynamics in Instagram."
-authors = ["Minsky Lab <bregy@minsky.cc>"]
-license = "MIT"
+authors = [{name = "Bregy Malpartida", email = "bregy@minsky.cc"}]
+dependencies = [
+    "instaloader~=4.7",
+    "pydantic~=1.8",
+    "python-dotenv~=0.17",
+    "minio~=7.0",
+    "pika~=1.2",
+    "loguru~=0.5",
+    "asyncpg~=0.23",
+]
+requires-python = ">=3.9"
+dynamic = ["classifiers"]
+license = {text = "MIT"}
 
-[tool.poetry.dependencies]
-python = "^3.9"
-instaloader = "^4.7.1"
-pydantic = "^1.8.1"
-peewee = "^3.14.4"
-python-dotenv = "^0.17.0"
-minio = "^7.0.3"
-pika = "^1.2.0"
-psycopg2 = "^2.8.6"
-loguru = "^0.5.3"
-
-[tool.poetry.dev-dependencies]
-autopep8 = "^1.5.6"
-mypy = "^0.812"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[project.urls]
+homepage = ""

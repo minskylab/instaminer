@@ -1,0 +1,35 @@
+version: "3"
+
+dotenv: [".env"]
+
+
+tasks:
+  start:
+    cmds:
+      - pdm run python run.py
+
+  freeze:
+    cmds:
+      - pdm export -f requirements -o requirements.txt --without-hashes --prod
+
+  publish-docker:
+    cmds:
+      - task: freeze
+      - docker buildx build --push --platform linux/amd64,linux/arm/v7 -t minskylab/instaminer:{{.TAG}} -t minskylab/instaminer:latest .
+
+  feature:
+    cmds:
+      - "git flow feature start '{{.NAME}}'"
+      - 'bit save "feat: {{.DESCRIPTION}}"'
+      - "git flow feature finish"
+      - "git push"
+  release:
+    cmds:
+      - "git flow release start '{{.TAG}}'"
+      - 'bit save "release: {{.DESCRIPTION}}"'
+      - "git flow release finish"
+      - "git push"
+      - "git checkout main"
+      - "git push"
+      - "git push origin '{{.TAG}}'"
+      - "git checkout dev"

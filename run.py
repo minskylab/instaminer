@@ -1,23 +1,25 @@
-from core.procedure import SearchConfigurations
-from core.core import NewContextOptions, new_context
-from core.looper import looper
-from settings import instaloader_options_from_env, minio_options_from_env, postgres_options_from_env, amqp_options_from_env
 from asyncio import run
 
+from dotenv import load_dotenv
 
-opts = NewContextOptions(
-    loader_options=instaloader_options_from_env(),
-    minio_options=minio_options_from_env(),
-    db_url=postgres_options_from_env(),
-    max_saved_memory_images=5,
-    # amqp_options=amqp_options_from_env(),
-)
+from core.core import new_context
+from core.looper import looper
+from load import default_context_options
+from settings.env import load_search_configuration
+from loguru import logger
 
 
-ctx = new_context(opts)
+async def main():
+    load_dotenv()
 
-run(looper(ctx, SearchConfigurations(
-    query="cusco",
-    delay_seconds=5*60,  # each 5min
-    period_seconds=5*60,
-)))
+    opts = default_context_options()
+    # print(opts)
+    ctx = await new_context(opts)
+
+    search = load_search_configuration()
+
+    logger.info(search)
+
+    await looper(ctx, search)
+
+run(main())
